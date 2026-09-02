@@ -205,18 +205,35 @@ search service required. Swapping in Meilisearch/Algolia later would mean
 replacing this one function plus adding an indexing job; nothing else in the
 app depends on the search implementation.
 
-## Product demo & onboarding
+## Landing page
 
-"Watch how it works" on the homepage opens a scripted, looping walkthrough
-([components/landing/demo-modal.tsx](components/landing/demo-modal.tsx)) —
-a fixed timeline of DOM state changes (search → filter → detail → bookmark),
-not a real embedded app instance, so it's fast and safe to show anonymous
-visitors. Progress bar and dot indicators sync to the same per-step
-duration; a persistent "Try it yourself" button and the bookmark step's
-inline prompt both route straight to `/signup` (no separate signup-modal
-duplicate — reuses the real page). Fully respects `prefers-reduced-motion`:
-no cursor animation or auto-advance, just static content with manual dot
-navigation.
+The `/` route (only — every other page keeps its existing look) is a
+restrained, product-first landing page rather than a marketing page:
+[components/landing/landing-content.tsx](components/landing/landing-content.tsx)
+composes Hero → Problem → Solution → Product Showcase → Use Case grid →
+Free API preview → Trust/data-quality section → Collection preview → Final
+CTA → Footer, all fed with real data (`getStats`, `getDomains`,
+`getBestFreeApis`, `intentSearch`, `lib/collections.ts`) — no invented API
+counts, testimonials, or customer logos.
+
+- The hero's search preview
+  ([components/landing/hero-search-preview.tsx](components/landing/hero-search-preview.tsx))
+  is a one-shot (non-looping) typing animation over a real
+  `intentSearch("payment API with a free tier")` result set fetched server-side
+  in [app/page.tsx](app/page.tsx) — not a scripted fake.
+- The product showcase
+  ([components/landing/product-showcase.tsx](components/landing/product-showcase.tsx))
+  embeds the actual live pages (`/search`, `/domain/[slug]`,
+  `/api/[provider]/[slug]`, `/compare`, `/collections/[slug]`) as same-origin
+  iframes rendered at a real 1280px desktop width and scaled down via CSS
+  `transform`, so it can never drift out of sync with the real product; on
+  narrow viewports the frame scrolls horizontally in its own container
+  instead of being clipped or forcing the page to scroll sideways.
+- Reuses the same data layer and scoring as the rest of the app (`ApiCard`'s
+  underlying `ScoredListing` type, `lib/collections.ts`) rather than
+  duplicating card/pricing logic for the landing page alone.
+
+## Product demo & onboarding
 
 After signup, `redirectTo: "/search?onboarding=1"` lands the new user in the
 real app with a 3-step dismissible coachmark sequence

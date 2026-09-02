@@ -1,88 +1,90 @@
-"use client";
-
-import type { ReactNode } from "react";
-import { DemoModalProvider } from "@/lib/demo-modal-context";
 import { Hero } from "@/components/landing/hero";
-import type { TerminalQuery } from "@/components/landing/hero-terminal";
-import { DemoModal } from "@/components/landing/demo-modal";
-import { DomainShowcase, type DomainPreview } from "@/components/landing/domain-showcase";
-import { StatsGrid } from "@/components/landing/stats-grid";
+import type { PreviewResult } from "@/components/landing/hero-search-preview";
+import { ProblemSection } from "@/components/landing/problem-section";
+import { SolutionSection } from "@/components/landing/solution-section";
+import { ProductShowcase } from "@/components/landing/product-showcase";
+import { UseCaseGrid } from "@/components/landing/use-case-grid";
+import { FreeApiPreview } from "@/components/landing/free-api-preview";
+import { TrustSection } from "@/components/landing/trust-section";
+import { CollectionPreview } from "@/components/landing/collection-preview";
+import { FinalCTA } from "@/components/landing/final-cta";
+import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import type { ScoredListing } from "@/lib/data";
+import type { Collection } from "@/lib/collections";
 
-interface PricingBreakdown {
-  model: string;
+interface DomainItem {
+  slug: string;
+  name: string;
+  description: string | null;
   count: number;
-  pct: number;
 }
 
 export function LandingContent({
   listingCount,
   domainCount,
-  providerCount,
-  freeTierCount,
-  pricingBreakdown,
+  previewResults,
   domains,
-  featuresSlot,
-  previewSlot,
-  terminalQueries,
-  discoverySlot,
+  bestFree,
+  collections,
 }: {
   listingCount: number;
   domainCount: number;
-  providerCount: number;
-  freeTierCount: number;
-  pricingBreakdown: PricingBreakdown[];
-  domains: DomainPreview[];
-  featuresSlot: ReactNode;
-  previewSlot: ReactNode;
-  terminalQueries: TerminalQuery[];
-  discoverySlot: ReactNode;
+  previewResults: PreviewResult[];
+  domains: DomainItem[];
+  bestFree: ScoredListing[];
+  collections: Collection[];
 }) {
   return (
-    <DemoModalProvider>
-      <Hero listingCount={listingCount} domainCount={domainCount} terminalQueries={terminalQueries} />
+    <>
+      <Hero listingCount={listingCount} domainCount={domainCount} previewResults={previewResults} />
 
-      <section className="mx-auto mt-16 w-full max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col gap-10">{discoverySlot}</div>
+      <section className="mx-auto mt-24 w-full max-w-4xl px-4 sm:px-6">
+        <ScrollReveal>
+          <ProblemSection />
+        </ScrollReveal>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-6xl px-4 sm:px-6">
-        <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-fg-subtle">
-          What you can do
-        </h2>
-        <p className="mb-4 text-sm text-fg-muted">
-          One directory, several ways in — browse, compare, save, and build on top of it.
-        </p>
-        {featuresSlot}
+      <section className="mx-auto mt-24 w-full max-w-5xl px-4 sm:px-6">
+        <ScrollReveal>
+          <SolutionSection />
+        </ScrollReveal>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-6xl px-4 sm:px-6">
-        <h2 className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-subtle">
-          By the numbers
-        </h2>
-        <StatsGrid
-          listingCount={listingCount}
-          domainCount={domainCount}
-          providerCount={providerCount}
-          freeTierCount={freeTierCount}
-          pricingBreakdown={pricingBreakdown}
-        />
+      <section className="mx-auto mt-24 w-full max-w-6xl px-4 sm:px-6">
+        <ScrollReveal>
+          <ProductShowcase />
+        </ScrollReveal>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-6xl px-4 sm:px-6">
-        <h2 className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-subtle">
-          Browse by domain
-        </h2>
-        <DomainShowcase domains={domains} />
+      <section className="mx-auto mt-24 w-full max-w-4xl px-4 sm:px-6">
+        <ScrollReveal>
+          <UseCaseGrid domains={domains} />
+        </ScrollReveal>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-6xl px-4 sm:px-6">
-        <h2 className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-subtle">
-          See it in action
-        </h2>
-        {previewSlot}
+      <section className="mx-auto mt-24 w-full max-w-5xl px-4 sm:px-6">
+        <ScrollReveal>
+          <FreeApiPreview listings={bestFree} />
+        </ScrollReveal>
       </section>
 
-      <DemoModal />
-    </DemoModalProvider>
+      <section className="mx-auto mt-24 w-full max-w-5xl px-4 sm:px-6">
+        <ScrollReveal>
+          <TrustSection />
+        </ScrollReveal>
+      </section>
+
+      <section className="mx-auto mt-24 w-full max-w-5xl px-4 sm:px-6">
+        <ScrollReveal>
+          <CollectionPreview collections={collections} />
+        </ScrollReveal>
+      </section>
+
+      <section className="mx-auto mt-24 mb-24 w-full max-w-4xl px-4 sm:px-6">
+        <ScrollReveal>
+          <FinalCTA />
+        </ScrollReveal>
+      </section>
+    </>
   );
 }

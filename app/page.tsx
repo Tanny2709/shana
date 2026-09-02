@@ -1,137 +1,60 @@
-import Link from "next/link";
-import {
-  getDomainsWithPreview,
-  getProviderNames,
-  getStats,
-  getPricingBreakdown,
-  getListingsBySlugsCard,
-  getBestFreeApis,
-  getHighestRated,
-  getRecentlyAdded,
-  getRecentlyVerified,
-  getBestValue,
-  getTrending,
-} from "@/lib/data";
+import { getDomains, getStats, getBestFreeApis, intentSearch } from "@/lib/data";
+import { collections as allCollections } from "@/lib/collections";
 import { LandingContent } from "@/components/landing/landing-content";
-import { LogoMarquee } from "@/components/landing/logo-marquee";
-import { FooterCTA } from "@/components/landing/footer-cta";
-import { ScrollReveal } from "@/components/landing/scroll-reveal";
-import { FeaturesLive } from "@/components/landing/features-live";
-import { LivePreviewStrip } from "@/components/landing/live-preview-strip";
-import { DiscoveryRow } from "@/components/discovery-row";
-import type { TerminalQuery } from "@/components/landing/hero-terminal";
+import type { PreviewResult } from "@/components/landing/hero-search-preview";
+import { SiteFooter } from "@/components/landing/site-footer";
+import type { Metadata } from "next";
 
-// Real seed-data slugs backing the hero's live-typing search mockup —
-// three genuine queries, each with 2 real matching listings.
-const TERMINAL_QUERY_SETS: { query: string; slugs: string[] }[] = [
-  { query: "stripe", slugs: ["stripe-api"] },
-  { query: "geocoding", slugs: ["opencage-api", "mapbox-api"] },
-  { query: "sms", slugs: ["twilio-api", "vonage-api"] },
-];
+export const metadata: Metadata = {
+  title: "API Directory — Find the Right API Faster",
+  description:
+    "Discover APIs by use case, compare pricing and free tiers, explore alternatives, and find everything you need to get started.",
+};
+
+const HERO_QUERY = "payment API with a free tier";
+const COLLECTION_SLUGS = ["best-free-ai-apis", "best-payment-apis", "cheap-maps-apis"];
 
 export default async function Home() {
-  const [
-    domains,
-    providers,
-    stats,
-    pricingBreakdown,
-    terminalListingSets,
-    bestFree,
-    highestRated,
-    recentlyAdded,
-    recentlyVerified,
-    bestValue,
-    trending,
-  ] = await Promise.all([
-    getDomainsWithPreview(),
-    getProviderNames(),
+  const [domains, stats, bestFree, heroSearch] = await Promise.all([
+    getDomains(),
     getStats(),
-    getPricingBreakdown(),
-    Promise.all(TERMINAL_QUERY_SETS.map((q) => getListingsBySlugsCard(q.slugs))),
-    getBestFreeApis(),
-    getHighestRated(),
-    getRecentlyAdded(),
-    getRecentlyVerified(),
-    getBestValue(),
-    getTrending(),
+    getBestFreeApis(4),
+    intentSearch(HERO_QUERY),
   ]);
 
-  const terminalQueries: TerminalQuery[] = TERMINAL_QUERY_SETS.map((q, i) => ({
-    query: q.query,
-    results: terminalListingSets[i].map((l) => ({
-      id: l.id,
-      name: l.name,
-      providerName: l.provider.name,
-      domainName: l.domains[0]?.domain.name ?? null,
-      domainSlug: l.domains[0]?.domain.slug ?? null,
-      pricingModel: l.pricingModel,
-    })),
+  const previewResults: PreviewResult[] = heroSearch.results.slice(0, 4).map((l) => ({
+    id: l.id,
+    slug: l.slug,
+    providerSlug: l.provider.slug,
+    name: l.name,
+    domainName: l.domains[0]?.domain.name ?? null,
+    pricingModel: l.pricingModel,
+    freeTierAvailable: l.freeTierAvailable,
+    freeTierDetails: l.freeTierDetails,
   }));
 
-  const domainPreviews = domains.map((d) => ({
-    id: d.id,
-    name: d.name,
+  const domainItems = domains.map((d) => ({
     slug: d.slug,
+    name: d.name,
+    description: d.description,
     count: d._count.listings,
-    preview: d.preview,
   }));
+
+  const collections = allCollections.filter((c) => COLLECTION_SLUGS.includes(c.slug));
 
   return (
-    <main className="flex-1">
-      <LandingContent
-        listingCount={stats.listingCount}
-        domainCount={stats.domainCount}
-        providerCount={stats.providerCount}
-        freeTierCount={stats.freeTierCount}
-        pricingBreakdown={pricingBreakdown}
-        domains={domainPreviews}
-        featuresSlot={<FeaturesLive />}
-        previewSlot={<LivePreviewStrip />}
-        terminalQueries={terminalQueries}
-        discoverySlot={
-          <>
-            {trending.length > 0 && (
-              <DiscoveryRow icon="🔥" title="Trending" listings={trending} viewAllHref="/browse" />
-            )}
-            <DiscoveryRow icon="⭐" title="Highest Rated" listings={highestRated} viewAllHref="/browse?sort=score" />
-            <DiscoveryRow icon="🆓" title="Best Free APIs" listings={bestFree} viewAllHref="/free-apis" />
-            <DiscoveryRow icon="💰" title="Best Value" listings={bestValue} viewAllHref="/browse?sort=value" />
-            <DiscoveryRow
-              icon="🆕"
-              title="Recently Added"
-              listings={recentlyAdded}
-              viewAllHref="/browse?sort=recent-added"
-            />
-            <DiscoveryRow
-              icon="✓"
-              title="Recently Verified"
-              listings={recentlyVerified}
-              viewAllHref="/browse?sort=recent-verified"
-            />
-          </>
-        }
-      />
-
-      <div className="mt-16">
-        <LogoMarquee names={providers.map((p) => p.name)} />
-      </div>
-
-      <div className="mx-auto mt-16 max-w-6xl px-4 pb-16 sm:px-6">
-        <ScrollReveal>
-          <FooterCTA />
-        </ScrollReveal>
-      </div>
-
-      <div className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          <Link href="/use-cases" className="text-fg-muted hover:text-fg">
-            Browse by use case →
-          </Link>
-          <Link href="/collections" className="text-fg-muted hover:text-fg">
-            Curated collections →
-          </Link>
-        </div>
-      </div>
-    </main>
+    <>
+      <main className="flex-1">
+        <LandingContent
+          listingCount={stats.listingCount}
+          domainCount={stats.domainCount}
+          previewResults={previewResults}
+          domains={domainItems}
+          bestFree={bestFree}
+          collections={collections}
+        />
+      </main>
+      <SiteFooter />
+    </>
   );
 }

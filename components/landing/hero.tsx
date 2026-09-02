@@ -1,55 +1,53 @@
-"use client";
-
-import { SearchBar } from "@/components/search-bar";
+import Link from "next/link";
 import { GradientMesh } from "@/components/landing/gradient-mesh";
-import { StatsBar } from "@/components/landing/stats-bar";
-import { HeroTerminal, type TerminalQuery } from "@/components/landing/hero-terminal";
-import { useDemoModal } from "@/lib/demo-modal-context";
+import { HeroSearchPreview, type PreviewResult } from "@/components/landing/hero-search-preview";
 
 export function Hero({
   listingCount,
   domainCount,
-  terminalQueries,
+  previewResults,
 }: {
   listingCount: number;
   domainCount: number;
-  terminalQueries: TerminalQuery[];
+  previewResults: PreviewResult[];
 }) {
-  const { openDemo } = useDemoModal();
-
   return (
     <div className="relative overflow-hidden">
       <GradientMesh />
-      <div className="relative mx-auto max-w-2xl px-4 py-20 text-center sm:py-28">
-        <h1 className="text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
-          Every API. One place to find the key.
+      <div className="relative mx-auto max-w-2xl px-4 py-24 text-center sm:py-32">
+        <p className="text-xs font-medium uppercase tracking-widest text-fg-subtle">
+          The API discovery directory
+        </p>
+        <h1 className="mt-4 text-[clamp(2.25rem,6vw,3.5rem)] font-semibold leading-[1.05] tracking-tight text-fg">
+          Find the right API.
+          <br />
+          Without the research rabbit hole.
         </h1>
-        <p className="mt-4 text-base text-fg-muted">
-          How to get a key, what it costs, and where to sign up — for APIs across AI, payments,
-          maps, and communication. We never store your keys.
+        <p className="mx-auto mt-5 max-w-md text-base text-fg-muted">
+          A searchable directory of APIs with pricing, free tiers, authentication, use cases,
+          documentation, and direct links to get started.
         </p>
 
-        <div
-          className="mt-8 rounded-lg transition-shadow duration-150 ease-out focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
-        >
-          <SearchBar size="lg" autoFocus />
-        </div>
-
-        <div className="mt-5 flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={openDemo}
-            className="text-sm text-fg-muted underline decoration-dotted underline-offset-4 transition-colors hover:text-fg"
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/browse"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90"
           >
-            Watch how it works
-          </button>
+            Explore the API Directory →
+          </Link>
+          <Link
+            href="/use-cases"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-5 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+          >
+            Browse by Use Case
+          </Link>
         </div>
 
-        <HeroTerminal queries={terminalQueries} />
+        <HeroSearchPreview results={previewResults} />
 
-        <div className="mt-10">
-          <StatsBar listingCount={listingCount} domainCount={domainCount} />
-        </div>
+        <p className="mt-8 text-xs text-fg-subtle">
+          {listingCount}+ APIs · {domainCount} domains · Recently verified
+        </p>
       </div>
     </div>
   );
