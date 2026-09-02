@@ -37,7 +37,7 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="text-sm font-semibold tracking-tight text-fg">
-              API Directory
+              Shana
             </Link>
             <p className="mt-2 text-sm text-fg-subtle">Find the right API faster.</p>
           </div>
@@ -57,7 +57,7 @@ export function SiteFooter() {
           ))}
         </div>
         <p className="mt-10 text-xs text-fg-subtle">
-          &copy; {new Date().getFullYear()} API Directory. Not affiliated with any listed API provider.
+          &copy; {new Date().getFullYear()} Shana. Not affiliated with any listed API provider.
         </p>
       </div>
     </footer>

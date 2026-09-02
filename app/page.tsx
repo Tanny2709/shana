@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "API Directory — Find the Right API Faster",
+  title: { absolute: "Shana — Find the Right API Faster" },
   description:
     "Discover APIs by use case, compare pricing and free tiers, explore alternatives, and find everything you need to get started.",
 };

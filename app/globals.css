@@ -59,10 +59,11 @@ body {
 }
 
 /* ---------------------------------------------------------------------
-   Landing-page-only palette (Phase 7). These tokens are never referenced
-   by app-page components (browse/detail/bookmarks/compare/etc.) — only by
-   components/landing/*. The app keeps its single restrained --accent;
-   the public landing page gets its own bolder, more colorful register.
+   Brand gradient. Originally landing-page-only (Phase 7); also used by
+   the global header/logo mark and site footer wordmark since the Shana
+   rebrand, so it's no longer scoped to components/landing/* alone. Most
+   app-page components (browse/detail/bookmarks/compare/etc.) still keep
+   the single restrained --accent for interactive elements.
    Deliberately dark-first (not theme-flipped): a marketing hero reads
    best against the near-black canvas regardless of the visitor's
    light/dark preference, per the brief.
@@ -137,6 +138,34 @@ body {
   50% {
     transform: translate(-4%, -3%) scale(1);
   }
+}
+
+@keyframes drift-3 {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.15);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(1);
+  }
+}
+
+@keyframes nudge-right {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+}
+
+.animate-nudge-right {
+  animation: nudge-right 1.4s ease-in-out infinite;
 }
 
 @keyframes marquee-scroll {

@@ -7,10 +7,12 @@ export function SearchBar({
   size = "md",
   defaultValue = "",
   autoFocus = false,
+  showShortcut = false,
 }: {
   size?: "md" | "lg";
   defaultValue?: string;
   autoFocus?: boolean;
+  showShortcut?: boolean;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(defaultValue);
@@ -48,9 +50,19 @@ export function SearchBar({
         className={
           isLarge
             ? "w-full rounded-lg border border-border bg-bg-elevated py-3.5 pl-11 pr-4 text-base text-fg placeholder:text-fg-subtle outline-none transition-colors focus:border-accent"
-            : "w-full rounded-md border border-border bg-bg-elevated py-1.5 pl-9 pr-3 text-sm text-fg placeholder:text-fg-subtle outline-none transition-colors focus:border-accent"
+            : `w-full rounded-md border border-border bg-bg-elevated py-1.5 pl-9 text-sm text-fg placeholder:text-fg-subtle outline-none transition-colors focus:border-accent ${
+                showShortcut ? "pr-11" : "pr-3"
+              }`
         }
       />
+      {showShortcut && (
+        <kbd
+          id="onboarding-cmdk"
+          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-[11px] text-fg-subtle"
+        >
+          ⌘K
+        </kbd>
+      )}
     </form>
   );
 }

@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 
 // Fires once when the element first scrolls into view, then disconnects —
 // entrance animations shouldn't re-trigger on every scroll direction change.
-export function useInView<T extends HTMLElement>(threshold = 0.2) {
+// `rootMargin` expands the trigger zone below the viewport (default 200px)
+// so content has already finished revealing by the time it's actually
+// visible, instead of popping in right at the viewport edge.
+export function useInView<T extends HTMLElement>(threshold = 0.2, rootMargin = "0px 0px 200px 0px") {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
 
@@ -27,11 +30,11 @@ export function useInView<T extends HTMLElement>(threshold = 0.2) {
           observer.disconnect();
         }
       },
-      { threshold },
+      { threshold, rootMargin },
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [threshold]);
+  }, [threshold, rootMargin]);
 
   return { ref, inView };
 }

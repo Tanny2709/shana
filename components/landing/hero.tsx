@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GradientMesh } from "@/components/landing/gradient-mesh";
+import { HeroNetwork } from "@/components/landing/hero-network";
 import { HeroSearchPreview, type PreviewResult } from "@/components/landing/hero-search-preview";
 
 export function Hero({
@@ -14,6 +15,7 @@ export function Hero({
   return (
     <div className="relative overflow-hidden">
       <GradientMesh />
+      <HeroNetwork />
       <div className="relative mx-auto max-w-2xl px-4 py-24 text-center sm:py-32">
         <p className="text-xs font-medium uppercase tracking-widest text-fg-subtle">
           The API discovery directory

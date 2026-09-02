@@ -7,17 +7,12 @@ export async function HeaderAuthNav() {
 
   if (!session?.user) {
     return (
-      <div className="flex items-center gap-3">
-        <Link href="/login" className="text-sm text-fg-muted transition-colors hover:text-fg">
-          Log in
-        </Link>
-        <Link
-          href="/signup"
-          className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg hover:opacity-90"
-        >
-          Sign up
-        </Link>
-      </div>
+      <Link
+        href="/login"
+        className="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+      >
+        Log in
+      </Link>
     );
   }
 
@@ -31,7 +26,10 @@ export async function HeaderAuthNav() {
         Bookmarks
       </Link>
       <form action={signOutAction}>
-        <button type="submit" className="text-sm text-fg-muted transition-colors hover:text-fg">
+        <button
+          type="submit"
+          className="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+        >
           Log out
         </button>
       </form>

@@ -223,12 +223,23 @@ counts, testimonials, or customer logos.
   in [app/page.tsx](app/page.tsx) — not a scripted fake.
 - The product showcase
   ([components/landing/product-showcase.tsx](components/landing/product-showcase.tsx))
-  embeds the actual live pages (`/search`, `/domain/[slug]`,
-  `/api/[provider]/[slug]`, `/compare`, `/collections/[slug]`) as same-origin
-  iframes rendered at a real 1280px desktop width and scaled down via CSS
-  `transform`, so it can never drift out of sync with the real product; on
-  narrow viewports the frame scrolls horizontally in its own container
-  instead of being clipped or forcing the page to scroll sideways.
+  shows real screenshots of the actual live pages (`/search`, `/domain/[slug]`,
+  `/api/[provider]/[slug]`, `/compare`, `/collections/[slug]`), captured at a
+  real 1280×860 desktop viewport into `public/showcase/*.png`. It started as
+  5 live same-origin iframes, which was the more honest approach ("never
+  drifts out of sync") but made the section visibly slow to appear — each
+  tab switch was a full page navigation. Static images fixed that; each
+  "Open →" link still goes to the real, live, interactive page. Trade-off:
+  the screenshots are a snapshot, not live — re-capture them (headless
+  Chrome at `--window-size=1280,860` against each route) if those pages
+  change meaningfully.
+- The hero's background includes a small canvas animation
+  ([components/landing/hero-network.tsx](components/landing/hero-network.tsx)):
+  drifting dots with connecting lines that appear as they pass near each
+  other, meant to read as "APIs and how they relate" rather than generic
+  decoration. Pure procedural `<canvas>` drawing (no images/network
+  requests), so it doesn't cost anything on page load; respects
+  `prefers-reduced-motion` by drawing one static frame instead of looping.
 - Reuses the same data layer and scoring as the rest of the app (`ApiCard`'s
   underlying `ScoredListing` type, `lib/collections.ts`) rather than
   duplicating card/pricing logic for the landing page alone.

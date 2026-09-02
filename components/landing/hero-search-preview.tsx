@@ -16,9 +16,9 @@ export interface PreviewResult {
 }
 
 const QUERY = "payment API with a free tier";
-const TYPE_MS = 45;
-const RESULT_DELAY_MS = 500;
-const RESULT_STAGGER_MS = 220;
+const TYPE_MS = 30;
+const RESULT_DELAY_MS = 300;
+const RESULT_STAGGER_MS = 130;
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 function subscribe(cb: () => void) {

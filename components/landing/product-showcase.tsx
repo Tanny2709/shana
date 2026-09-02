@@ -1,24 +1,44 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
-// Real, same-origin iframes of the actual live pages — not screenshots or
-// illustrations — rendered at a real desktop width then scaled down via
-// CSS transform (not width:100%, which would force the embedded page into
-// a narrow mobile layout and hide desktop-only chrome like sidebars). Can
-// never drift out of sync with the real product.
+// Static screenshots of the real live pages (public/showcase/*.png), not
+// live iframes — embedding 5 full page navigations here made this section
+// noticeably slow to appear. Each image is a real capture of the actual
+// route at desktop width, so it still shows genuine product UI, it just
+// doesn't self-update — regenerate the screenshots (see scripts, or
+// re-capture at 1280x860) if the underlying pages change meaningfully.
+// The "Open →" link always goes to the real, live, interactive page.
 const TABS = [
-  { key: "search", label: "Search", href: "/search?q=stripe", path: "/search?q=stripe" },
-  { key: "browse", label: "Browse", href: "/domain/ai-ml", path: "/domain/ai-ml" },
-  { key: "evaluate", label: "Evaluate", href: "/api/stripe/stripe-api", path: "/api/stripe/stripe-api" },
-  { key: "compare", label: "Compare", href: "/compare?ids=stripe-api,razorpay-api", path: "/compare" },
-  { key: "discover", label: "Discover", href: "/collections/best-free-ai-apis", path: "/collections" },
+  { key: "search", label: "Search", href: "/search?q=stripe", path: "/search?q=stripe", image: "/showcase/search.png" },
+  { key: "browse", label: "Browse", href: "/domain/ai-ml", path: "/domain/ai-ml", image: "/showcase/browse.png" },
+  {
+    key: "evaluate",
+    label: "Evaluate",
+    href: "/api/stripe/stripe-api",
+    path: "/api/stripe/stripe-api",
+    image: "/showcase/evaluate.png",
+  },
+  {
+    key: "compare",
+    label: "Compare",
+    href: "/compare?ids=stripe-api,razorpay-api",
+    path: "/compare",
+    image: "/showcase/compare.png",
+  },
+  {
+    key: "discover",
+    label: "Discover",
+    href: "/collections/best-free-ai-apis",
+    path: "/collections",
+    image: "/showcase/discover.png",
+  },
 ] as const;
 
-const IFRAME_WIDTH = 1280;
-const IFRAME_HEIGHT = 860;
-const SCALE = 0.62; // renders inside the max-w-4xl frame at a real desktop width
+const IMAGE_WIDTH = 1280;
+const IMAGE_HEIGHT = 860;
 
 export function ProductShowcase() {
   const [active, setActive] = useState<(typeof TABS)[number]["key"]>("search");
@@ -35,18 +55,31 @@ export function ProductShowcase() {
         </h2>
       </div>
 
-      <div className="mt-10 flex justify-center gap-1 overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setActive(t.key)}
-            className={`shrink-0 rounded-md px-3.5 py-2 text-sm font-medium transition-colors ${
-              active === t.key ? "bg-accent text-accent-fg" : "text-fg-muted hover:text-fg"
-            }`}
-          >
-            {t.label}
-          </button>
+      <div className="mt-10 flex items-center justify-center gap-1 overflow-x-auto">
+        {TABS.map((t, i) => (
+          <div key={t.key} className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setActive(t.key)}
+              className={`shrink-0 rounded-md px-3.5 py-2 text-sm font-medium transition-colors ${
+                active === t.key ? "bg-accent text-accent-fg" : "text-fg-muted hover:text-fg"
+              }`}
+            >
+              {t.label}
+            </button>
+            {i < TABS.length - 1 && (
+              <button
+                type="button"
+                onClick={() => setActive(TABS[i + 1].key)}
+                aria-label={`Show ${TABS[i + 1].label}`}
+                className="animate-nudge-right shrink-0 px-0.5 text-fg-subtle transition-colors hover:text-accent"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </button>
+            )}
+          </div>
         ))}
       </div>
 
@@ -60,21 +93,16 @@ export function ProductShowcase() {
             Open →
           </Link>
         </div>
-        {/* overflow-x-auto (not hidden): on narrow viewports this fixed-width
-            preview scrolls horizontally instead of being clipped or forcing
-            the page itself to scroll sideways. */}
-        <div className="w-full overflow-x-auto bg-bg" style={{ height: IFRAME_HEIGHT * SCALE }}>
-          <div className="relative" style={{ width: IFRAME_WIDTH * SCALE, height: IFRAME_HEIGHT * SCALE }}>
-            <iframe
-              key={tab.key}
-              src={tab.href}
-              title={tab.label}
-              tabIndex={-1}
-              loading="lazy"
-              className="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
-              style={{ width: IFRAME_WIDTH, height: IFRAME_HEIGHT, transform: `scale(${SCALE})` }}
-            />
-          </div>
+        <div className="relative w-full bg-bg" style={{ aspectRatio: `${IMAGE_WIDTH} / ${IMAGE_HEIGHT}` }}>
+          <Image
+            key={tab.key}
+            src={tab.image}
+            alt={`${tab.label} view of the ${tab.path} page`}
+            fill
+            sizes="(max-width: 1024px) 100vw, 896px"
+            priority={tab.key === "search"}
+            className="object-cover object-top"
+          />
         </div>
       </div>
     </div>
