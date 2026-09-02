@@ -1,0 +1,221 @@
+// API Reference Directory — Prisma schema
+// Datasource: Postgres (Supabase for hosted dev)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum PricingModel {
+  free
+  freemium
+  pay_as_you_go
+  subscription
+  credit_based
+}
+
+enum AuthMethod {
+  api_key
+  oauth
+  both
+  none
+}
+
+enum ListingStatus {
+  active
+  deprecated
+  needs_review
+}
+
+enum ContributionType {
+  new_listing
+  edit
+  report
+}
+
+enum BookmarkType {
+  domain
+  api_listing
+}
+
+enum ContributionStatus {
+  pending
+  approved
+  rejected
+}
+
+enum EngagementType {
+  view
+  key_click
+  docs_click
+  compare_add
+}
+
+model Provider {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?  @map("logo_url")
+  website     String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  listings ApiListing[]
+
+  @@map("providers")
+}
+
+model ApiListing {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String   @map("provider_id")
+
+  name             String
+  shortDescription String   @map("short_description")
+  useCases         String[] @map("use_cases")
+
+  docsUrl   String @map("docs_url")
+  signupUrl String @map("signup_url")
+
+  authMethod AuthMethod @map("auth_method")
+
+  freeTierAvailable Boolean @default(false) @map("free_tier_available")
+  freeTierDetails   String? @map("free_tier_details")
+
+  pricingModel   PricingModel @map("pricing_model")
+  pricingSummary String       @map("pricing_summary")
+
+  rateLimits String? @map("rate_limits")
+
+  howToGetKey String[] @default([]) @map("how_to_get_key")
+
+  // Developer/integration support (Phase 11). Empty arrays / false mean
+  // "not documented here" — never treated as a confirmed negative in the UI.
+  officialSdks       String[] @default([]) @map("official_sdks")
+  supportedLanguages String[] @default([]) @map("supported_languages")
+  restSupport        Boolean  @default(true) @map("rest_support")
+  graphqlSupport     Boolean  @default(false) @map("graphql_support")
+  webhookSupport     Boolean  @default(false) @map("webhook_support")
+  websocketSupport   Boolean  @default(false) @map("websocket_support")
+
+  lastVerifiedAt DateTime      @default(now()) @map("last_verified_at")
+  status         ListingStatus @default(active)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  domains          ApiListingDomain[]
+  contributions    Contribution[]
+  engagementEvents EngagementEvent[]
+
+  @@index([providerId])
+  @@index([status])
+  @@map("api_listings")
+}
+
+model Domain {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  listings ApiListingDomain[]
+
+  @@map("domains")
+}
+
+// Explicit join model for the ApiListing <-> Domain many-to-many relation (tags)
+model ApiListingDomain {
+  apiListing   ApiListing @relation(fields: [apiListingId], references: [id], onDelete: Cascade)
+  apiListingId String     @map("api_listing_id")
+
+  domain   Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  domainId String @map("domain_id")
+
+  @@id([apiListingId, domainId])
+  @@map("api_listing_domains")
+}
+
+model Contribution {
+  id   String           @id @default(cuid())
+  type ContributionType @map("type")
+
+  // Null when type is new_listing; set when editing or reporting an existing listing
+  apiListing   ApiListing? @relation(fields: [apiListingId], references: [id], onDelete: SetNull)
+  apiListingId String?     @map("api_listing_id")
+
+  // Proposed data payload (new listing fields, or partial edit/report notes)
+  payload Json
+
+  submitterName  String? @map("submitter_name")
+  submitterEmail String? @map("submitter_email")
+  notes          String?
+
+  status      ContributionStatus @default(pending)
+  reviewNotes String?            @map("review_notes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("contributions")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  bookmarks Bookmark[]
+
+  @@map("users")
+}
+
+// Bookmarks a Domain or an ApiListing. targetId is a loose FK (points at
+// Domain.id or ApiListing.id depending on type) rather than two nullable
+// relations, since only one type of target ever applies per row and a
+// nullable-relation pair would just add ambiguity for no benefit here.
+model Bookmark {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  type     BookmarkType @map("type")
+  targetId String       @map("target_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, type, targetId])
+  @@index([userId])
+  @@map("bookmarks")
+}
+
+// Real, non-invasive engagement signal (Phase 16) — no user identity
+// attached, just what happened and when, so Trending/Most Viewed/etc. on
+// the homepage reflect genuine activity rather than seeded numbers. A
+// section built on this data renders nothing (not zeros, not placeholders)
+// until real events exist.
+model EngagementEvent {
+  id String @id @default(cuid())
+
+  apiListing   ApiListing @relation(fields: [apiListingId], references: [id], onDelete: Cascade)
+  apiListingId String     @map("api_listing_id")
+
+  type      EngagementType
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@index([apiListingId, type])
+  @@index([type, createdAt])
+  @@map("engagement_events")
+}

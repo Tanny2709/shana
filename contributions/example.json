@@ -1,0 +1,25 @@
+{
+  "providerName": "Example Corp",
+  "providerSlug": "example-corp",
+  "providerWebsite": "https://example.com",
+  "providerDescription": "One-line description of what Example Corp does.",
+  "providerLogoUrl": "",
+  "name": "Example API",
+  "slug": "example-api",
+  "shortDescription": "One sentence describing what this API does.",
+  "useCases": ["Use case one", "Use case two"],
+  "docsUrl": "https://example.com/docs",
+  "signupUrl": "https://example.com/signup",
+  "authMethod": "api_key",
+  "freeTierAvailable": true,
+  "freeTierDetails": "Free tier: 1,000 requests/month.",
+  "pricingModel": "freemium",
+  "pricingSummary": "Free tier, then $0.01 per request.",
+  "rateLimits": "10 requests/second on the free tier.",
+  "howToGetKey": [
+    "Create an Example Corp account",
+    "Go to Settings → API Keys",
+    "Click 'Create key'"
+  ],
+  "domainSlugs": ["ai-ml"]
+}
