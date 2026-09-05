@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAllActiveListingsSorted, getSupportedLanguages, type BrowseSort } from "@/lib/data";
 import { ApiCard } from "@/components/api-card";
 
+export const revalidate = 60;
 export const metadata = { title: "Browse all APIs" };
 
 const SORTS: { value: BrowseSort; label: string }[] = [

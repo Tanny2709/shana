@@ -8,6 +8,8 @@ import { RemoveFromCompareButton } from "@/components/remove-from-compare-button
 import { ScoreBadge } from "@/components/score-badge";
 import { authMethodLabel } from "@/lib/format";
 
+export const revalidate = 60;
+
 export const metadata = {
   title: "Compare APIs",
 };

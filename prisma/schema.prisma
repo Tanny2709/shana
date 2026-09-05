@@ -118,6 +118,11 @@ model ApiListing {
 
   @@index([providerId])
   @@index([status])
+  // Covers "active listings sorted by X" — getRecentlyAdded/getRecentlyVerified
+  // filter on status then order by these columns; without the composite
+  // index that's a full scan + sort instead of an index-ordered read.
+  @@index([status, createdAt])
+  @@index([status, lastVerifiedAt])
   @@map("api_listings")
 }
 
@@ -141,6 +146,11 @@ model ApiListingDomain {
   domainId String @map("domain_id")
 
   @@id([apiListingId, domainId])
+  // The composite PK only helps lookups by apiListingId (leftmost prefix) —
+  // every "listings in this domain" query (domain pages, collections,
+  // intent search, getDomains counts) filters on domainId alone, which
+  // needs its own index rather than scanning the whole join table.
+  @@index([domainId])
   @@map("api_listing_domains")
 }
 

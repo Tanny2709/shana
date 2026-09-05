@@ -6,6 +6,8 @@ import { ApiCard } from "@/components/api-card";
 import { ExternalLinkIcon } from "@/components/external-link-icon";
 import type { Metadata } from "next";
 
+export const revalidate = 60;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

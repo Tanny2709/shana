@@ -5,6 +5,11 @@ import type { PreviewResult } from "@/components/landing/hero-search-preview";
 import { SiteFooter } from "@/components/landing/site-footer";
 import type { Metadata } from "next";
 
+// Public, non-personalized data that changes rarely (curated listings) —
+// serve a cached render for a minute instead of hitting Postgres on every
+// request, which matters a lot when the DB is a network hop away.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: { absolute: "Shana — Find the Right API Faster" },
   description:

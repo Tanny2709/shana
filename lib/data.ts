@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { computeScore, type DirectoryScore } from "@/lib/scoring";
 import { parseSearchIntent, hasIntentSignal, type ParsedIntent } from "@/lib/intent-search";
@@ -236,7 +237,10 @@ const PRICING_RANK: Record<PricingModel, number> = {
   subscription: 0,
 };
 
-export async function getListingDetail(providerSlug: string, listingSlug: string) {
+// Wrapped in React's cache() — both generateMetadata and the page body call
+// this with the same args for the same request, and without dedup that's
+// two round-trips to a remote Postgres instead of one.
+export const getListingDetail = cache(async (providerSlug: string, listingSlug: string) => {
   return prisma.apiListing.findFirst({
     where: { slug: listingSlug, provider: { slug: providerSlug } },
     include: {
@@ -244,7 +248,7 @@ export async function getListingDetail(providerSlug: string, listingSlug: string
       domains: { include: { domain: true } },
     },
   });
-}
+});
 
 export async function getAllListingsForIndex() {
   return prisma.apiListing.findMany({
@@ -524,15 +528,21 @@ function getAlternativeTag(
 // Provider pages
 // ---------------------------------------------------------------------
 
-export async function getProviderDetail(slug: string) {
-  const provider = await prisma.provider.findUnique({ where: { slug } });
+// Wrapped in React's cache() — generateMetadata and the page body both call
+// this with the same slug for the same request; without dedup that's extra
+// round-trips to a remote Postgres instead of one.
+export const getProviderDetail = cache(async (slug: string) => {
+  // Neither query depends on the other's result (both only need `slug`,
+  // already known) — fetch in parallel instead of in series.
+  const [provider, listings] = await Promise.all([
+    prisma.provider.findUnique({ where: { slug } }),
+    prisma.apiListing.findMany({
+      where: { status: "active", provider: { slug } },
+      orderBy: { name: "asc" },
+      ...listingCard,
+    }),
+  ]);
   if (!provider) return null;
-
-  const listings = await prisma.apiListing.findMany({
-    where: { status: "active", provider: { slug } },
-    orderBy: { name: "asc" },
-    ...listingCard,
-  });
 
   const domainSlugs = [...new Set(listings.flatMap((l) => l.domains.map((d) => d.domain.slug)))];
 
@@ -557,7 +567,7 @@ export async function getProviderDetail(slug: string) {
         });
 
   return { provider, listings, domainSlugs, relatedProviders };
-}
+});
 
 export async function getSupportedLanguages() {
   const listings = await prisma.apiListing.findMany({

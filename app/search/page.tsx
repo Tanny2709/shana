@@ -6,6 +6,8 @@ import { ApiCard } from "@/components/api-card";
 import { SearchBar } from "@/components/search-bar";
 import { OnboardingCoachmarks } from "@/components/onboarding-coachmarks";
 
+export const revalidate = 60;
+
 export default async function SearchPage({
   searchParams,
 }: {

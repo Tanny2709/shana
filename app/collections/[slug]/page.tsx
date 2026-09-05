@@ -5,6 +5,8 @@ import { getListingsBySlugsCard } from "@/lib/data";
 import { ApiCard } from "@/components/api-card";
 import type { Metadata } from "next";
 
+export const revalidate = 60;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

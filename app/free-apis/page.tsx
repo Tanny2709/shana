@@ -5,6 +5,8 @@ import { authMethodLabel } from "@/lib/format";
 import { ApiCard } from "@/components/api-card";
 import type { AuthMethod } from "@prisma/client";
 
+export const revalidate = 60;
+
 export const metadata = {
   title: "Free APIs",
   description: "APIs you can start using for free — grouped by domain, with real free-tier details.",

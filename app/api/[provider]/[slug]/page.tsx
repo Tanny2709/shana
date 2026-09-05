@@ -60,13 +60,14 @@ export default async function ApiDetailPage({ params }: PageProps) {
   if (!listing) notFound();
 
   // Awaited (not fire-and-forget) — on a serverless runtime an un-awaited
-  // write can get cut off once the response is sent. It's one small
-  // insert, so the added latency is negligible; failures are swallowed
-  // inside recordEngagement so a DB hiccup never breaks the page.
-  await recordEngagement(listing.id, "view");
-
+  // write can get cut off once the response is sent. Neither call depends
+  // on the other's result, so they run in parallel rather than adding a
+  // full extra round-trip in series.
   const domainSlugs = listing.domains.map((d) => d.domain.slug);
-  const alternatives = await getAlternatives(listing, domainSlugs, 3);
+  const [, alternatives] = await Promise.all([
+    recordEngagement(listing.id, "view"),
+    getAlternatives(listing, domainSlugs, 3),
+  ]);
 
   // providerListingCount isn't cheap to compute for a single listing without
   // an extra query — a small, honest one is worth it here since this score
@@ -92,7 +93,7 @@ export default async function ApiDetailPage({ params }: PageProps) {
   };
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -155,92 +156,108 @@ export default async function ApiDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Quick facts */}
-      <section className="mt-8 grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-border bg-bg-elevated p-4 sm:grid-cols-4">
-        <QuickFact label="Pricing" value={pricingModelLabel(listing.pricingModel)} />
-        <QuickFact label="Free tier" value={listing.freeTierAvailable ? "Yes" : "No"} />
-        <QuickFact label="Auth" value={authMethodLabel(listing.authMethod)} />
-        <QuickFact label="Status" value={listing.status === "active" ? "Operational" : "Needs review"} />
-      </section>
+      {/* Score + quick facts + data confidence sit in a sticky sidebar on
+          desktop (via lg:order) so the most decision-relevant info stays
+          visible without scrolling. On mobile there's no sidebar to pin, so
+          this block comes first in source order instead — score still
+          shows right after the header, not buried at the bottom. */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_300px]">
+        <aside className="flex flex-col gap-4 lg:order-2 lg:sticky lg:top-20 lg:h-fit">
+          <ScoreBreakdown score={score} />
 
-      {(listing.useCases.length > 0 || goodToKnow.length > 0 || considerAlternativesIf.length > 0) && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-sm font-medium text-fg">Best for</h2>
-          <BestForSection
-            bestFor={listing.useCases}
-            goodToKnow={goodToKnow}
-            considerAlternativesIf={considerAlternativesIf}
-          />
-        </section>
-      )}
+          <div className="rounded-lg border border-border bg-bg-elevated p-4">
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-subtle">Quick facts</h2>
+            <div className="flex flex-col gap-3">
+              <QuickFact icon="pricing" label="Pricing" value={pricingModelLabel(listing.pricingModel)} />
+              <QuickFact icon="freeTier" label="Free tier" value={listing.freeTierAvailable ? "Yes" : "No"} />
+              <QuickFact icon="auth" label="Auth" value={authMethodLabel(listing.authMethod)} />
+              <QuickFact
+                icon="status"
+                label="Status"
+                value={listing.status === "active" ? "Operational" : "Needs review"}
+              />
+            </div>
+          </div>
 
-      {listing.howToGetKey.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-sm font-medium text-fg">How to get your key</h2>
-          <ol className="flex flex-col gap-2.5">
-            {listing.howToGetKey.map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm text-fg-muted">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-elevated text-[11px] font-medium text-fg-subtle">
-                  {i + 1}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+          <DataConfidence confidence={confidence} lastVerifiedAt={listing.lastVerifiedAt} />
+        </aside>
 
-      <section className="mt-8">
-        <h2 className="mb-3 text-sm font-medium text-fg">Pricing</h2>
-        <PricingTable
-          pricingModel={listing.pricingModel}
-          pricingSummary={listing.pricingSummary}
-          freeTierAvailable={listing.freeTierAvailable}
-          freeTierDetails={listing.freeTierDetails}
-          rateLimits={listing.rateLimits}
-        />
-      </section>
+        <div className="flex flex-col gap-8 lg:order-1">
+          {(listing.useCases.length > 0 || goodToKnow.length > 0 || considerAlternativesIf.length > 0) && (
+            <section>
+              <h2 className="mb-3 text-sm font-medium text-fg">Best for</h2>
+              <BestForSection
+                bestFor={listing.useCases}
+                goodToKnow={goodToKnow}
+                considerAlternativesIf={considerAlternativesIf}
+              />
+            </section>
+          )}
 
-      {listing.useCases.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-sm font-medium text-fg">Use cases</h2>
-          <ul className="flex flex-wrap gap-1.5">
-            {listing.useCases.map((uc) => (
-              <li key={uc}>
-                <Link
-                  href={`/search?q=${encodeURIComponent(uc)}`}
-                  className="rounded-full border border-border px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
-                >
-                  {uc}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+          {listing.howToGetKey.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-medium text-fg">How to get your key</h2>
+              <ol className="flex flex-col gap-2.5">
+                {listing.howToGetKey.map((step, i) => (
+                  <li key={i} className="flex gap-3 text-sm text-fg-muted">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-elevated text-[11px] font-medium text-fg-subtle">
+                      {i + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
-      <section className="mt-8">
-        <h2 className="mb-3 text-sm font-medium text-fg">Developer support</h2>
-        <DeveloperSupport
-          supportedLanguages={listing.supportedLanguages}
-          restSupport={listing.restSupport}
-          graphqlSupport={listing.graphqlSupport}
-          webhookSupport={listing.webhookSupport}
-          websocketSupport={listing.websocketSupport}
-        />
-      </section>
+          <section>
+            <h2 className="mb-3 text-sm font-medium text-fg">Pricing</h2>
+            <PricingTable
+              pricingModel={listing.pricingModel}
+              pricingSummary={listing.pricingSummary}
+              freeTierAvailable={listing.freeTierAvailable}
+              freeTierDetails={listing.freeTierDetails}
+              rateLimits={listing.rateLimits}
+            />
+          </section>
 
-      {alternatives.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-sm font-medium text-fg">Alternatives</h2>
-          <AlternativesSection alternatives={alternatives} />
-        </section>
-      )}
+          {listing.useCases.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-medium text-fg">Use cases</h2>
+              <ul className="flex flex-wrap gap-1.5">
+                {listing.useCases.map((uc) => (
+                  <li key={uc}>
+                    <Link
+                      href={`/search?q=${encodeURIComponent(uc)}`}
+                      className="rounded-full border border-border px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+                    >
+                      {uc}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <ScoreBreakdown score={score} />
-        <DataConfidence confidence={confidence} lastVerifiedAt={listing.lastVerifiedAt} />
-      </section>
+          <section>
+            <h2 className="mb-3 text-sm font-medium text-fg">Developer support</h2>
+            <DeveloperSupport
+              supportedLanguages={listing.supportedLanguages}
+              restSupport={listing.restSupport}
+              graphqlSupport={listing.graphqlSupport}
+              webhookSupport={listing.webhookSupport}
+              websocketSupport={listing.websocketSupport}
+            />
+          </section>
+
+          {alternatives.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-medium text-fg">Alternatives</h2>
+              <AlternativesSection alternatives={alternatives} />
+            </section>
+          )}
+        </div>
+      </div>
 
       <div className="mt-10 border-t border-border pt-4">
         <ReportOutdatedButton apiListingId={listing.id} />
@@ -249,11 +266,50 @@ export default async function ApiDetailPage({ params }: PageProps) {
   );
 }
 
-function QuickFact({ label, value }: { label: string; value: string }) {
+const QUICK_FACT_ICONS = {
+  pricing: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M14.5 9.5a2 2 0 0 0-2-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1a2 2 0 0 1-2-1.5M12 6v1.5M12 16.5V18" />
+    </svg>
+  ),
+  freeTier: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="9" width="18" height="11" rx="1" />
+      <path d="M12 9v11M3 13h18M12 9C10 6 7 5 7 7c0 1.2 1.5 2 5 2ZM12 9c2-3 5-4 5-2 0 1.2-1.5 2-5 2Z" />
+    </svg>
+  ),
+  auth: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="15" r="4" />
+      <path d="m10.5 12.5 8-8M16 7l2 2M19 4l2 2" />
+    </svg>
+  ),
+  status: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12h4l2-7 4 14 2-7h6" />
+    </svg>
+  ),
+} as const;
+
+function QuickFact({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof QUICK_FACT_ICONS;
+  label: string;
+  value: string;
+}) {
   return (
-    <div>
-      <p className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">{label}</p>
-      <p className="mt-0.5 text-sm text-fg">{value}</p>
+    <div className="flex items-center gap-2.5">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-fg-subtle">
+        {QUICK_FACT_ICONS[icon]}
+      </span>
+      <div>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">{label}</p>
+        <p className="text-sm text-fg">{value}</p>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getUseCaseCounts } from "@/lib/data";
 
+export const revalidate = 60;
+
 export const metadata = {
   title: "Browse by use case",
 };

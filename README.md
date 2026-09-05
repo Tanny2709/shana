@@ -99,6 +99,41 @@ Built on top of it, all computed from existing fields (no new schema):
 - **`/browse`** — every active listing, sortable (score/value/recency/name).
 - **`/free-apis`** — free-tier listings grouped by domain, each showing its
   real `freeTierDetails` text (not invented request quotas).
+- **Detail page layout** ([app/api/[provider]/[slug]/page.tsx](<app/api/[provider]/[slug]/page.tsx>)) —
+  the Directory Score (now a radial [`ScoreRing`](components/score-ring.tsx)
+  plus per-category progress bars), Quick Facts, and Data Confidence live in
+  a sidebar that's sticky on desktop and — since there's no sidebar to pin
+  on narrow viewports — simply comes first in source order on mobile, so the
+  score is visible right after the header either way instead of buried at
+  the bottom of a long list of sections.
+
+## Performance
+
+The DB (Supabase Postgres) lives in AWS `ap-south-1` (Mumbai); Vercel's
+serverless functions are pinned to the matching `bom1` region in
+[vercel.json](vercel.json) so every query is a regional round-trip instead
+of crossing continents — the single biggest lever for perceived page speed
+on the deployed site. On top of that:
+
+- `getListingDetail` and `getProviderDetail` ([lib/data.ts](lib/data.ts))
+  are wrapped in React's `cache()` — both are called once from
+  `generateMetadata` and once from the page body per request; without the
+  wrapper that's two round-trips to Postgres instead of one.
+- Independent queries that were awaited in series (e.g. domain lookup +
+  listings on `/domain/[slug]`, engagement recording + alternatives on the
+  detail page) now run via `Promise.all`.
+- `export const revalidate = 60` on the read-only, non-personalized routes
+  (home, browse, domain, provider, free-apis, collections, use-cases,
+  search, compare) — repeat visits within the window are served from cache
+  instead of hitting the DB at all. Left off `/api/[provider]/[slug]`
+  (records a real view on every load) and `/bookmarks`/`/admin` (already
+  `force-dynamic`, user-specific).
+- New indexes ([prisma/schema.prisma](prisma/schema.prisma)):
+  `api_listing_domains(domain_id)` — the join table's only index was the
+  composite PK keyed on `apiListingId` first, which doesn't help "listings
+  in domain X" lookups (domain pages, collections, intent search) — plus
+  `api_listings(status, created_at)` and `(status, last_verified_at)` for
+  the Recently Added / Recently Verified sorts.
 
 ## Micro-interactions & polish
 

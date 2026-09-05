@@ -5,6 +5,8 @@ import { FilterSidebar } from "@/components/filter-sidebar";
 import { BookmarkButton } from "@/components/bookmark-button";
 import type { AuthMethod, PricingModel } from "@prisma/client";
 
+export const revalidate = 60;
+
 export default async function DomainPage({
   params,
   searchParams,
@@ -15,15 +17,19 @@ export default async function DomainPage({
   const { slug } = await params;
   const sp = await searchParams;
 
-  const domain = await getDomainBySlug(slug);
+  // Neither query depends on the other's result (the listings query only
+  // needs the slug, already known) — fetch in parallel instead of waiting
+  // on the domain lookup first.
+  const [domain, listings] = await Promise.all([
+    getDomainBySlug(slug),
+    getListingsByDomain(slug, {
+      pricingModel: sp.pricing as PricingModel | undefined,
+      authMethod: sp.auth as AuthMethod | undefined,
+      freeTierOnly: sp.free === "1",
+      sort: (sp.sort as ListingSort | undefined) ?? "name",
+    }),
+  ]);
   if (!domain) notFound();
-
-  const listings = await getListingsByDomain(slug, {
-    pricingModel: sp.pricing as PricingModel | undefined,
-    authMethod: sp.auth as AuthMethod | undefined,
-    freeTierOnly: sp.free === "1",
-    sort: (sp.sort as ListingSort | undefined) ?? "name",
-  });
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
